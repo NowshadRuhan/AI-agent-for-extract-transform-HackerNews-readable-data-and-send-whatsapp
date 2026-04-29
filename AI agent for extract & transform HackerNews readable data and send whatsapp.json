@@ -1,0 +1,280 @@
+{
+  "name": "AI agent for extract & transform HackerNews readable data and send whatsapp",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "d6c16e7f-6cd6-4bf2-a399-1fb33a637c3a",
+      "name": "When clicking ‘Execute workflow’",
+      "type": "n8n-nodes-base.manualTrigger",
+      "position": [
+        176,
+        416
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "resource": "all",
+        "limit": "={{ $json.Count }}",
+        "additionalFields": {}
+      },
+      "id": "778d194f-7351-4762-ade2-fe8b1d281531",
+      "name": "Hacker News",
+      "type": "n8n-nodes-base.hackerNews",
+      "position": [
+        608,
+        416
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "19790b3d-6052-4a8d-b532-493509d444e7",
+      "name": "Loop Over Items",
+      "type": "n8n-nodes-base.splitInBatches",
+      "position": [
+        848,
+        416
+      ],
+      "typeVersion": 3
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "52ddafbb-536f-45d6-9697-7ddf5b9b3869",
+              "name": "Count",
+              "type": "string",
+              "value": "1"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f3085478-08ae-4786-83d4-689abeba7a30",
+      "name": "Set the Input Fields",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        384,
+        416
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Extract a human readable content. \n\nHere's the context :\n\n{{ $json.data }}",
+        "batching": {}
+      },
+      "id": "56c47178-5b2b-4ecc-85d4-f4f875055d2f",
+      "name": "Extract Human Readable Data",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "position": [
+        1536,
+        432
+      ],
+      "retryOnFail": true,
+      "typeVersion": 1.7
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "267f21f5-d483-4e74-9773-b1d8a02dd984",
+              "name": "author",
+              "type": "string",
+              "value": "={{ $json.author }}"
+            },
+            {
+              "id": "667a3ffb-a07c-4f66-b253-a7c64b2aa8e0",
+              "name": "url",
+              "type": "string",
+              "value": "={{ $json._highlightResult.url.value }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d908d3c1-85aa-49b3-9db9-cb5bb8279d69",
+      "name": "Set the url, author",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1056,
+        432
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "options": {}
+      },
+      "id": "f93c4b2c-9398-4cd8-8993-a1fcc940e29c",
+      "name": "Create an HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        1280,
+        432
+      ],
+      "retryOnFail": true,
+      "typeVersion": 4.2,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "1074379732428924",
+        "recipientPhoneNumber": "+358413296191",
+        "textBody": "={{ $json.text }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        1888,
+        432
+      ],
+      "id": "b2414246-e246-4dba-ba98-da07008a294e",
+      "name": "Send message",
+      "webhookId": "1653261b-3558-4a03-931c-b6223462e5dc",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "27PnVdpj1uu87Au9",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        1536,
+        640
+      ],
+      "id": "d3d0b425-1680-4124-9f62-fd20142bbf68",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "DPiMLzbKu1NsVWLn",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Hacker News": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Set the url, author",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set the url, author": {
+      "main": [
+        [
+          {
+            "node": "Create an HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set the Input Fields": {
+      "main": [
+        [
+          {
+            "node": "Hacker News",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create an HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Extract Human Readable Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Human Readable Data": {
+      "main": [
+        [
+          {
+            "node": "Send message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Set the Input Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send message": {
+      "main": [
+        []
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Extract Human Readable Data",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "a37707dd-0e3b-494a-afe5-490f85b4db16",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e1c3bb77d6e42e4f4974e39ad9acac972a2a2d5c3bfb8f8a6f735e9311391a18"
+  },
+  "id": "uNSZuWQrwM2hYsxR",
+  "tags": []
+}
